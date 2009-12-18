@@ -1,7 +1,5 @@
 package AuthSub::Controller::Root;
 use Ark 'Controller';
-use Net::Google::AuthSub;
-use Net::Google::DataAPI::Auth::AuthSub;
 use Net::Google::Spreadsheets;
 
 has '+namespace' => default => '';

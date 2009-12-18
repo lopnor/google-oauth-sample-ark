@@ -1,4 +1,3 @@
-? use Encode;
 <html>
 <head>
 <meta http_equiv="Content-Type" content="text/html; charset=UTF-8" />
