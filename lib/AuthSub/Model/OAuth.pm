@@ -13,12 +13,14 @@ __PACKAGE__->config(
     consumer_key => $config->{consumer_key},
     consumer_secret => $config->{consumer_secret},
     scope => ref $config->{scope} ? $config->{scope} : [ $config->{scope} ],
-    callback => URI->new($config->{callback}),
 );
 
 sub get_authorize_token_url {
-    my $self = shift;
-    my $oauth = $self->_get_instance;
+    my ($self, %args) = @_;
+    if ($args{callback} && ! ref $args{callback} ne 'URI') {
+        $args{callback} = URI->new("$args{callback}");
+    }
+    my $oauth = $self->_get_instance(%args);
     $oauth->get_request_token or die;
     $request_token{$oauth->request_token} = $oauth->request_token_secret;
     $oauth->get_authorize_token_url;
@@ -43,9 +45,10 @@ sub get_auth {
 }
 
 sub _get_instance {
-    my ($self) = @_;
+    my ($self, %args) = @_;
     return Net::Google::DataAPI::Auth::OAuth->new(
-        $self->config,
+        %{$self->config},
+        %args,
     );
 }
 

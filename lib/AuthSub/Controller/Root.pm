@@ -18,14 +18,9 @@ sub index :Path :Args(0) {
     my ($self, $c) = @_;
     my $auth;
     if (my $token = $c->session->get('token')) {
-        my $authsub = Net::Google::AuthSub->new;
-        $authsub->auth(undef, $token);
-        $auth = Net::Google::DataAPI::Auth::AuthSub->new(
-            authsub => $authsub,
-        );
+        $auth = $c->model('AuthSub')->get_auth($token);
     } elsif (my $access_token = $c->session->get('access_token')) {
-        my $oauth = $c->model('OAuth');
-        $auth = $oauth->get_auth($access_token);
+        $auth = $c->model('OAuth')->get_auth($access_token);
     }
     if ($auth) {
         my $service = Net::Google::Spreadsheets->new( auth => $auth );
@@ -36,34 +31,27 @@ sub index :Path :Args(0) {
 
 sub authsub :Local {
     my ($self, $c) = @_;
-
-    my $authsub = Net::Google::AuthSub->new;
-    return $c->redirect(
-        $authsub->request_token(
-            $c->uri_for('/token'),
-            'http://spreadsheets.google.com/feeds/',
-            secure => 0,
-            session => 1,
+    return $c->redirect( 
+        $c->model('AuthSub')->request_token(
+            callback => $c->uri_for('/token')
         )
     );
 }
 
 sub oauth :Local {
     my ($self, $c) = @_;
-    
-    my $oauth = $c->model('OAuth');
-    return $c->redirect(
-        $oauth->get_authorize_token_url
+    return $c->redirect( 
+        $c->model('OAuth')->get_authorize_token_url(
+            callback => $c->uri_for('/token')
+        )
     );
 }
 
 sub token :Local {
     my ($self, $c) = @_;
     if (my $authsub_token = $c->req->param('token')) {
-        my $authsub = Net::Google::AuthSub->new;
-        $authsub->auth(undef, $authsub_token);
-        my $session_token = $authsub->session_token;
-        $c->session->set(token => $session_token);
+        my $token = $c->model('AuthSub')->session_token($authsub_token);
+        $c->session->set(token => $token);
     } else {
         my $req_token = $c->req->param('oauth_token');
         my $verifier = $c->req->param('oauth_verifier');
